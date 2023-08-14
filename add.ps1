@@ -4,22 +4,22 @@ Param (
     [String]$Path
 )
 
+. ".\helpers.ps1"
+
+# Make path absolute.
+$Path = Resolve-Path -Path $Path
+
 if ($PSVersionTable.PSVersion.Major -gt 5) {
     powershell -Version 5 -File $MyInvocation.MyCommand.Definition -Path $Path
     exit
 }
 
-if (-Not (Test-Path -Path $Path)) {
-    New-Item -Path $Path -ItemType "directory"
-}
-
-Set-Content -Path $Path -Stream com.dropbox.ignored -Value 1
-
-Get-Content -Path target -Stream com.dropbox.ignored
+Set-IgnoreFlag -Path $Path
 
 # Add to .dbignore (Dropbox Ignore).
 # TODO: Remove dropbox path prefix.
 # TODO: Make path unix style.
-$DBPath = (ConvertFrom-Json -InputObject (Get-Content $env:LOCALAPPDATA\Dropbox\info.json)).personal.path
-$DBIgnorePath = $DBPath + "\.dbignore"
+# TODO: Trailing slash causes crash
+$DBIgnorePath = Get-DBIgnorePath
+
 Add-Content -Path $DBIgnorePath -Value ${Path}
